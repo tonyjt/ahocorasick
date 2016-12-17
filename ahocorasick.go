@@ -12,6 +12,7 @@ package ahocorasick
 import (
 	"container/list"
 	"errors"
+	"unicode/utf8"
 )
 
 // A node in the trie structure used to implement Aho-Corasick
@@ -258,7 +259,7 @@ func (m *Matcher) Match(in []byte) []int {
 	return hits
 }
 
-func (m *Matcher) Replace(in []byte, replacer byte, isReplace bool, hitType int) ([]byte, interface{}, error) {
+func (m *Matcher) Replace(in []byte, replacer []byte, isReplace bool, hitType int) ([]byte, interface{}, error) {
 
 	var out []byte
 
@@ -319,8 +320,13 @@ func (m *Matcher) Replace(in []byte, replacer byte, isReplace bool, hitType int)
 
 				f.counter = m.counter
 				if isReplace {
-					for j := i - len(f.b) + 1; j <= i; j++ {
-						out[j] = replacer
+					lenstr := utf8.RuneCountInString(string(f.b))
+					//log.Printf("key:%s,len:%d", string(f.b), lenstr)
+					//log.Printf("lenstr :%d, out:%s,i:%d,len(f.b):%d\n", lenstr, out, len(out), len(f.b))
+					out = out[:len(out)-len(f.b)]
+
+					for j := 0; j < lenstr; j++ {
+						out = append(out, replacer...)
 					}
 				}
 
@@ -350,8 +356,11 @@ func (m *Matcher) Replace(in []byte, replacer byte, isReplace bool, hitType int)
 
 					f.counter = m.counter
 					if isReplace {
-						for j := i - len(f.b) + 1; j <= i; j++ {
-							out[j] = replacer
+						lenstr := utf8.RuneCountInString(string(f.b))
+						out = out[:len(out)-len(f.b)]
+
+						for j := 0; j < lenstr; j++ {
+							out = append(out, replacer...)
 						}
 					}
 				} else {

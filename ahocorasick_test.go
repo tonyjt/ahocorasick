@@ -158,9 +158,9 @@ func TestMatch(t *testing.T) {
 }
 
 func TestMatcher_Replace(t *testing.T) {
-	m := NewStringMatcher([]string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"})
-	replacer := byte('*')
-	src := "Mozilla/5.0 (Macintosh; Intel Mac OS Mac X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
+	m := NewStringMatcher([]string{"Mozilla", "Mac", "中文", "Macintosh", "Safari", "Sausage"})
+	replacer := []byte("*")
+	src := "Mozilla/5.0 (Macintosh; Intel Mac OS Mac 中文中文中文中文 中X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
 
 	content, _, err := m.Replace([]byte(src), replacer, false, EnumHitTypeIndex)
 
@@ -218,6 +218,10 @@ func TestMatcher_Replace(t *testing.T) {
 
 	assert(t, ok4)
 	assert(t, len(d4) > 0)
+	t.Error(src)
+	t.Error(string(content4))
+	//t.Error([]byte(src))
+	//t.Error(content4)
 
 }
 
@@ -279,10 +283,10 @@ func BenchmarkRegexpFails(b *testing.B) {
 	}
 }
 
-var bytes2 = []byte("Firefox is a web browser, and is Mozilla's flagship software product. It is available in both desktop and mobile versions. Firefox uses the Gecko layout engine to render web pages, which implements current and anticipated web standards. As of April 2013, Firefox has approximately 20% of worldwide usage share of web browsers, making it the third most-used web browser. Firefox began as an experimental branch of the Mozilla codebase by Dave Hyatt, Joe Hewitt and Blake Ross. They believed the commercial requirements of Netscape's sponsorship and developer-driven feature creep compromised the utility of the Mozilla browser. To combat what they saw as the Mozilla Suite's software bloat, they created a stand-alone browser, with which they intended to replace the Mozilla Suite. Firefox was originally named Phoenix but the name was changed so as to avoid trademark conflicts with Phoenix Technologies. The initially-announced replacement, Firebird, provoked objections from the Firebird project community. The current name, Firefox, was chosen on February 9, 2004.")
+var bytes2 = []byte("Firefox is a web browser, 中文中文中文字 and is Mozilla's flagship software product. It is available in both desktop and mobile versions. Firefox uses the Gecko layout engine to render web pages, which implements current and anticipated web standards. As of April 2013, Firefox has approximately 20% of worldwide usage share of web browsers, making it the third most-used web browser. Firefox began as an experimental branch of the Mozilla codebase by Dave Hyatt, Joe Hewitt and Blake Ross. They believed the commercial requirements of Netscape's sponsorship and developer-driven feature creep compromised the utility of the Mozilla browser. To combat what they saw as the Mozilla Suite's software bloat, they created a stand-alone browser, with which they intended to replace the Mozilla Suite. Firefox was originally named Phoenix but the name was changed so as to avoid trademark conflicts with Phoenix Technologies. The initially-announced replacement, Firebird, provoked objections from the Firebird project community. The current name, Firefox, was chosen on February 9, 2004.")
 var sbytes2 = string(bytes2)
 
-var dictionary3 = []string{"Mozilla", "Mac", "Macintosh", "Safari", "Phoenix"}
+var dictionary3 = []string{"Mozilla", "Mac", "中文", "Macintosh", "Safari", "Phoenix"}
 var precomputed3 = NewStringMatcher(dictionary3)
 
 func BenchmarkLongMatchWorks(b *testing.B) {
@@ -390,14 +394,14 @@ func BenchmarkLongRegexpMany(b *testing.B) {
 }
 
 func BenchmarkMatcher_MatchNew(b *testing.B) {
-	char := byte('*')
+	char := []byte("*")
 	for i := 0; i < b.N; i++ {
 
 		precomputed5.Replace(bytes2, char, false, EnumHitTypeIndex)
 	}
 }
 func BenchmarkMatcher_Replace(b *testing.B) {
-	char := byte('*')
+	char := []byte("*")
 
 	for i := 0; i < b.N; i++ {
 
@@ -406,7 +410,7 @@ func BenchmarkMatcher_Replace(b *testing.B) {
 }
 
 func BenchmarkMatcher_ReplaceWordCount(b *testing.B) {
-	char := byte('*')
+	char := []byte("*")
 
 	for i := 0; i < b.N; i++ {
 
@@ -415,7 +419,7 @@ func BenchmarkMatcher_ReplaceWordCount(b *testing.B) {
 }
 
 func BenchmarkMatcher_ReplaceWordIndex(b *testing.B) {
-	char := byte('*')
+	char := []byte("*")
 
 	for i := 0; i < b.N; i++ {
 
@@ -424,9 +428,10 @@ func BenchmarkMatcher_ReplaceWordIndex(b *testing.B) {
 }
 
 func BenchmarkMatcher_ReplaceIndexWord(b *testing.B) {
+	char := []byte("*")
 	for i := 0; i < b.N; i++ {
 
-		precomputed5.Replace(bytes2, byte('*'), true, EnumHitTypeIndexWord)
+		precomputed5.Replace(bytes2, char, true, EnumHitTypeIndexWord)
 	}
 }
 
