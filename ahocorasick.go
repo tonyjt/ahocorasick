@@ -11,6 +11,7 @@ package ahocorasick
 
 import (
 	"container/list"
+	"errors"
 )
 
 // A node in the trie structure used to implement Aho-Corasick
@@ -255,4 +256,126 @@ func (m *Matcher) Match(in []byte) []int {
 	}
 
 	return hits
+}
+
+func (m *Matcher) Replace(in []byte, replacer byte, isReplace bool, hitType int) ([]byte, interface{}, error) {
+
+	var out []byte
+
+	//log.Printf("in :\n%v\n%v,replacer:%v \n",in,out,replacer)
+
+	m.counter += 1
+	var hitsIndex []int
+	var hitsWordCount map[string]int
+	var hitsWordIndex map[string][]int
+	var hitsIndexWord map[int][]byte
+
+	if hitType == EnumHitTypeIndex {
+
+	} else if hitType == EnumHitTypeWordCount {
+		hitsWordCount = make(map[string]int)
+	} else if hitType == EnumHitTypeWordIndex {
+		hitsWordIndex = make(map[string][]int)
+	} else if hitType == EnumHitTypeIndexWord {
+		hitsIndexWord = make(map[int][]byte)
+	} else {
+		return nil, nil, errors.New("hit type not support")
+	}
+
+	n := m.root
+
+	for i, b := range in {
+		out = append(out, b)
+		c := int(b)
+
+		if !n.root && n.child[c] == nil {
+			n = n.fails[c]
+		}
+
+		if n.child[c] != nil {
+			f := n.child[c]
+			n = f
+
+			if f.output && (hitType != EnumHitTypeIndex || f.counter != m.counter) {
+
+				if hitType == EnumHitTypeIndex {
+					hitsIndex = append(hitsIndex, f.index)
+				} else if hitType == EnumHitTypeWordCount {
+					bstr := string(f.b)
+					if _, ok := hitsWordCount[bstr]; !ok {
+						hitsWordCount[bstr] = 0
+					}
+					hitsWordCount[bstr] += 1
+
+				} else if hitType == EnumHitTypeWordIndex {
+					bstr := string(f.b)
+
+					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
+				} else {
+					key := i - len(f.b) + 1
+
+					hitsIndexWord[key] = f.b
+				}
+
+				f.counter = m.counter
+				if isReplace {
+					for j := i - len(f.b) + 1; j <= i; j++ {
+						out[j] = replacer
+					}
+				}
+
+			}
+
+			for !f.suffix.root && (hitType != EnumHitTypeIndex || f.counter != m.counter) {
+				f = f.suffix
+				if f.counter != m.counter {
+					if hitType == EnumHitTypeIndex {
+						hitsIndex = append(hitsIndex, f.index)
+					} else if hitType == EnumHitTypeWordCount {
+						bstr := string(f.b)
+						if _, ok := hitsWordCount[bstr]; !ok {
+							hitsWordCount[bstr] = 0
+						}
+						hitsWordCount[bstr] += 1
+
+					} else if hitType == EnumHitTypeWordIndex {
+						bstr := string(f.b)
+
+						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
+					} else {
+						key := i - len(f.b) + 1
+
+						hitsIndexWord[key] = f.b
+					}
+
+					f.counter = m.counter
+					if isReplace {
+						for j := i - len(f.b) + 1; j <= i; j++ {
+							out[j] = replacer
+						}
+					}
+				} else {
+
+					// There's no point working our way up the
+					// suffixes if it's been done before for this call
+					// to Match. The matches are already in hits.
+
+					break
+				}
+			}
+		}
+	}
+	var iHits interface{}
+
+	if hitType == EnumHitTypeIndex {
+		iHits = hitsIndex
+	} else if hitType == EnumHitTypeWordCount {
+		iHits = hitsWordCount
+	} else if hitType == EnumHitTypeWordIndex {
+		iHits = hitsWordIndex
+	} else {
+		iHits = hitsIndexWord
+	}
+
+	return out, iHits, nil
 }

@@ -157,6 +157,70 @@ func TestMatch(t *testing.T) {
 	assert(t, len(hits) == 0)
 }
 
+func TestMatcher_Replace(t *testing.T) {
+	m := NewStringMatcher([]string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"})
+	replacer := byte('*')
+	src := "Mozilla/5.0 (Macintosh; Intel Mac OS Mac X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
+
+	content, _, err := m.Replace([]byte(src), replacer, false, EnumHitTypeIndex)
+
+	assert(t, err == nil)
+	//assert(t, len(hits) != 0)
+
+	assert(t, strings.Compare(string(content), string(src)) == 0)
+
+	content, _, err = m.Replace([]byte(src), replacer, true, EnumHitTypeIndex)
+
+	assert(t, err == nil)
+
+	assert(t, strings.Compare(string(content), string(src)) != 0)
+
+	content1, hits1, err1 := m.Replace([]byte(src), replacer, true, EnumHitTypeIndex)
+
+	assert(t, err1 == nil)
+
+	assert(t, strings.Compare(string(content1), string(src)) != 0)
+
+	d1, ok1 := hits1.([]int)
+
+	assert(t, ok1)
+
+	assert(t, len(d1) > 0)
+	content2, hits2, err2 := m.Replace([]byte(src), replacer, true, EnumHitTypeWordCount)
+
+	assert(t, err2 == nil)
+
+	assert(t, strings.Compare(string(content2), string(src)) != 0)
+
+	d2, ok2 := hits2.(map[string]int)
+
+	assert(t, ok2)
+	assert(t, len(d2) > 0)
+
+	content3, hits3, err3 := m.Replace([]byte(src), replacer, true, EnumHitTypeWordIndex)
+
+	assert(t, err3 == nil)
+
+	assert(t, strings.Compare(string(content3), string(src)) != 0)
+
+	d3, ok3 := hits3.(map[string][]int)
+
+	assert(t, ok3)
+	assert(t, len(d3) > 0)
+
+	content4, hits4, err4 := m.Replace([]byte(src), replacer, true, EnumHitTypeIndexWord)
+
+	assert(t, err4 == nil)
+
+	assert(t, strings.Compare(string(content4), string(src)) != 0)
+
+	d4, ok4 := hits4.(map[int][]byte)
+
+	assert(t, ok4)
+	assert(t, len(d4) > 0)
+
+}
+
 var bytes = []byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36")
 var sbytes = string(bytes)
 var dictionary = []string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"}
@@ -322,5 +386,52 @@ func BenchmarkLongContainsMany(b *testing.B) {
 func BenchmarkLongRegexpMany(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		re5.FindAllIndex(bytes2, -1)
+	}
+}
+
+func BenchmarkMatcher_MatchNew(b *testing.B) {
+	char := byte('*')
+	for i := 0; i < b.N; i++ {
+
+		precomputed5.Replace(bytes2, char, false, EnumHitTypeIndex)
+	}
+}
+func BenchmarkMatcher_Replace(b *testing.B) {
+	char := byte('*')
+
+	for i := 0; i < b.N; i++ {
+
+		precomputed5.Replace(bytes2, char, true, EnumHitTypeIndex)
+	}
+}
+
+func BenchmarkMatcher_ReplaceWordCount(b *testing.B) {
+	char := byte('*')
+
+	for i := 0; i < b.N; i++ {
+
+		precomputed5.Replace(bytes2, char, true, EnumHitTypeWordCount)
+	}
+}
+
+func BenchmarkMatcher_ReplaceWordIndex(b *testing.B) {
+	char := byte('*')
+
+	for i := 0; i < b.N; i++ {
+
+		precomputed5.Replace(bytes2, char, true, EnumHitTypeWordIndex)
+	}
+}
+
+func BenchmarkMatcher_ReplaceIndexWord(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+		precomputed5.Replace(bytes2, byte('*'), true, EnumHitTypeIndexWord)
+	}
+}
+
+func BenchmarkMatcher_Match(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		precomputed5.Match(bytes2)
 	}
 }
