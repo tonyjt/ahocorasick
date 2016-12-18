@@ -1,7 +1,9 @@
 package ahocorasick
 
 const (
-	EnumHitTypeIndex = iota + 1 //[]int 命中的单词index
+	EnumHitTypeNone = iota // none, match时不支持此选项
+
+	EnumHitTypeWord //[]int 命中的单词index
 
 	EnumHitTypeWordCount //map[string]int  命中单词的数量
 

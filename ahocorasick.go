@@ -10,8 +10,11 @@
 package ahocorasick
 
 import (
+	"bytes"
 	"container/list"
 	"errors"
+	"sort"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -55,8 +58,9 @@ type Matcher struct {
 	// prevent output of multiple matches of the same string
 	trie []node // preallocated block of memory containing all the
 	// nodes
-	extent int   // offset into trie that is currently free
-	root   *node // Points to trie[0]
+	extent     int   // offset into trie that is currently free
+	root       *node // Points to trie[0]
+	dictionary [][]byte
 }
 
 // finndBlice looks for a blice in the trie starting from the root and
@@ -196,7 +200,7 @@ func NewMatcher(dictionary [][]byte) *Matcher {
 	m := new(Matcher)
 
 	m.buildTrie(dictionary)
-
+	m.dictionary = dictionary
 	return m
 }
 
@@ -211,7 +215,7 @@ func NewStringMatcher(dictionary []string) *Matcher {
 	}
 
 	m.buildTrie(d)
-
+	m.dictionary = d
 	return m
 }
 
@@ -259,34 +263,40 @@ func (m *Matcher) Match(in []byte) []int {
 	return hits
 }
 
-func (m *Matcher) Replace(in []byte, replacer []byte, isReplace bool, hitType int) ([]byte, interface{}, error) {
+func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitType int) (string, interface{}, error) {
 
+	in := []byte(inStr)
+	replacer := []byte(replacerStr)
 	var out []byte
 
-	//log.Printf("in :\n%v\n%v,replacer:%v \n",in,out,replacer)
-
 	m.counter += 1
-	var hitsIndex []int
+	var hitsWord []string
 	var hitsWordCount map[string]int
 	var hitsWordIndex map[string][]int
-	var hitsIndexWord map[int][]byte
-
-	if hitType == EnumHitTypeIndex {
+	var hitsIndexWord map[int]string
+	var hits map[int][]byte
+	hits = make(map[int][]byte)
+	if hitType == EnumHitTypeNone {
+		if !isReplace {
+			return "", nil, errors.New("match not support hittype none")
+		}
+	} else if hitType == EnumHitTypeWord {
 
 	} else if hitType == EnumHitTypeWordCount {
 		hitsWordCount = make(map[string]int)
 	} else if hitType == EnumHitTypeWordIndex {
 		hitsWordIndex = make(map[string][]int)
 	} else if hitType == EnumHitTypeIndexWord {
-		hitsIndexWord = make(map[int][]byte)
+		hitsIndexWord = make(map[int]string)
 	} else {
-		return nil, nil, errors.New("hit type not support")
+		return "", nil, errors.New("hit type not support")
 	}
 
 	n := m.root
 
+	var bstr string
+
 	for i, b := range in {
-		out = append(out, b)
 		c := int(b)
 
 		if !n.root && n.child[c] == nil {
@@ -294,75 +304,62 @@ func (m *Matcher) Replace(in []byte, replacer []byte, isReplace bool, hitType in
 		}
 
 		if n.child[c] != nil {
+
 			f := n.child[c]
 			n = f
+			if f.output && isReplace {
+				hits[i-len(f.b)+1] = f.b
+			}
+			if f.output && (hitType != EnumHitTypeWord || f.counter != m.counter) {
 
-			if f.output && (hitType != EnumHitTypeIndex || f.counter != m.counter) {
-
-				if hitType == EnumHitTypeIndex {
-					hitsIndex = append(hitsIndex, f.index)
+				if hitType == EnumHitTypeWord {
+					hitsWord = append(hitsWord, string(f.b))
 				} else if hitType == EnumHitTypeWordCount {
-					bstr := string(f.b)
+					bstr = string(f.b)
 					if _, ok := hitsWordCount[bstr]; !ok {
 						hitsWordCount[bstr] = 0
 					}
 					hitsWordCount[bstr] += 1
 
 				} else if hitType == EnumHitTypeWordIndex {
-					bstr := string(f.b)
+					bstr = string(f.b)
 
 					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
-				} else {
-					key := i - len(f.b) + 1
+				} else if hitType == EnumHitTypeIndexWord {
 
-					hitsIndexWord[key] = f.b
+					hitsIndexWord[utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)] = string(f.b)
 				}
 
 				f.counter = m.counter
-				if isReplace {
-					lenstr := utf8.RuneCountInString(string(f.b))
-					//log.Printf("key:%s,len:%d", string(f.b), lenstr)
-					//log.Printf("lenstr :%d, out:%s,i:%d,len(f.b):%d\n", lenstr, out, len(out), len(f.b))
-					out = out[:len(out)-len(f.b)]
-
-					for j := 0; j < lenstr; j++ {
-						out = append(out, replacer...)
-					}
-				}
 
 			}
-
-			for !f.suffix.root && (hitType != EnumHitTypeIndex || f.counter != m.counter) {
+			for !f.suffix.root {
 				f = f.suffix
-				if f.counter != m.counter {
-					if hitType == EnumHitTypeIndex {
-						hitsIndex = append(hitsIndex, f.index)
+				if f.output && isReplace {
+					hits[i-len(f.b)+1] = f.b
+				}
+
+				if hitType != EnumHitTypeWord || f.counter != m.counter {
+					if hitType == EnumHitTypeWord {
+						hitsWord = append(hitsWord, string(f.b))
 					} else if hitType == EnumHitTypeWordCount {
-						bstr := string(f.b)
+						bstr = string(f.b)
 						if _, ok := hitsWordCount[bstr]; !ok {
 							hitsWordCount[bstr] = 0
 						}
 						hitsWordCount[bstr] += 1
 
 					} else if hitType == EnumHitTypeWordIndex {
-						bstr := string(f.b)
+						bstr = string(f.b)
 
 						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
-					} else {
-						key := i - len(f.b) + 1
+					} else if hitType == EnumHitTypeIndexWord {
 
-						hitsIndexWord[key] = f.b
+						hitsIndexWord[utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)] = string(f.b)
 					}
 
 					f.counter = m.counter
-					if isReplace {
-						lenstr := utf8.RuneCountInString(string(f.b))
-						out = out[:len(out)-len(f.b)]
 
-						for j := 0; j < lenstr; j++ {
-							out = append(out, replacer...)
-						}
-					}
 				} else {
 
 					// There's no point working our way up the
@@ -372,19 +369,71 @@ func (m *Matcher) Replace(in []byte, replacer []byte, isReplace bool, hitType in
 					break
 				}
 			}
+
 		}
+
 	}
+	if isReplace {
+
+		var lastIndex int
+
+		keys := make([]int, 0, len(hits))
+		for k := range hits {
+			keys = append(keys, k)
+		}
+
+		sort.Ints(keys)
+
+		for _, index := range keys {
+			word := hits[index]
+			if index > lastIndex {
+				out = append(out, in[lastIndex+1:index]...)
+			}
+
+			lenWord := utf8.RuneCount(word)
+
+			for i := 0; i < lenWord; i++ {
+				out = append(out, replacer...)
+			}
+
+			lastIndex = index + len(word) - 1
+
+		}
+		if lastIndex < len(in)-1 {
+			out = append(out, in[lastIndex+1:]...)
+		}
+	} else {
+		out = in
+	}
+	//copy(out, in)
+
 	var iHits interface{}
 
-	if hitType == EnumHitTypeIndex {
-		iHits = hitsIndex
+	if hitType == EnumHitTypeWord {
+		iHits = hitsWord
 	} else if hitType == EnumHitTypeWordCount {
 		iHits = hitsWordCount
 	} else if hitType == EnumHitTypeWordIndex {
 		iHits = hitsWordIndex
-	} else {
+	} else if hitType == EnumHitTypeIndexWord {
 		iHits = hitsIndexWord
 	}
 
-	return out, iHits, nil
+	return string(out), iHits, nil
+}
+
+//benchmark
+func (m *Matcher) Re2(in string, replacer string) string {
+	hits := m.Match([]byte(in))
+	if len(hits) > 0 {
+		for _, h := range hits {
+			word := m.dictionary[h]
+			var bb bytes.Buffer
+			for i := 0; i < utf8.RuneCount(word); i++ {
+				bb.WriteString(string(replacer))
+			}
+			in = strings.Replace(in, string(word), bb.String(), -1)
+		}
+	}
+	return in
 }
