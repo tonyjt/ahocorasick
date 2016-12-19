@@ -197,7 +197,7 @@ func TestMatcher_Replace(t *testing.T) {
 
 	assert(t, strings.Compare(content2, src) != 0)
 
-	d2, ok2 := hits2.(map[string]int)
+	d2, ok2 := hits2.(map[string]int64)
 
 	assert(t, ok2)
 	assert(t, len(d2) > 0)
@@ -208,7 +208,7 @@ func TestMatcher_Replace(t *testing.T) {
 
 	assert(t, strings.Compare(content3, src) != 0)
 
-	d3, ok3 := hits3.(map[string][]int)
+	d3, ok3 := hits3.(map[string][]int64)
 
 	assert(t, ok3)
 	assert(t, len(d3) > 0)
@@ -219,7 +219,7 @@ func TestMatcher_Replace(t *testing.T) {
 
 	assert(t, strings.Compare(content4, src) != 0)
 
-	d4, ok4 := hits4.(map[int]string)
+	d4, ok4 := hits4.(map[int64]string)
 
 	assert(t, ok4)
 	assert(t, len(d4) > 0)

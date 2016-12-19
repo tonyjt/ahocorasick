@@ -271,9 +271,9 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 
 	m.counter += 1
 	var hitsWord []string
-	var hitsWordCount map[string]int
-	var hitsWordIndex map[string][]int
-	var hitsIndexWord map[int]string
+	var hitsWordCount map[string]int64
+	var hitsWordIndex map[string][]int64
+	var hitsIndexWord map[int64]string
 	var hits map[int][]byte
 	hits = make(map[int][]byte)
 	if hitType == EnumHitTypeNone {
@@ -283,11 +283,11 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 	} else if hitType == EnumHitTypeWord {
 
 	} else if hitType == EnumHitTypeWordCount {
-		hitsWordCount = make(map[string]int)
+		hitsWordCount = make(map[string]int64)
 	} else if hitType == EnumHitTypeWordIndex {
-		hitsWordIndex = make(map[string][]int)
+		hitsWordIndex = make(map[string][]int64)
 	} else if hitType == EnumHitTypeIndexWord {
-		hitsIndexWord = make(map[int]string)
+		hitsIndexWord = make(map[int64]string)
 	} else {
 		return "", nil, errors.New("hit type not support")
 	}
@@ -324,10 +324,10 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 				} else if hitType == EnumHitTypeWordIndex {
 					bstr = string(f.b)
 
-					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
+					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(i-len(f.b)+1))
 				} else if hitType == EnumHitTypeIndexWord {
 
-					hitsIndexWord[utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)] = string(f.b)
+					hitsIndexWord[int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b))] = string(f.b)
 				}
 
 				f.counter = m.counter
@@ -352,10 +352,10 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 					} else if hitType == EnumHitTypeWordIndex {
 						bstr = string(f.b)
 
-						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], i-len(f.b)+1)
+						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(i-len(f.b)+1))
 					} else if hitType == EnumHitTypeIndexWord {
 
-						hitsIndexWord[utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)] = string(f.b)
+						hitsIndexWord[int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b))] = string(f.b)
 					}
 
 					f.counter = m.counter
