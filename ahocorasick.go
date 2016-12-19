@@ -324,7 +324,7 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 				} else if hitType == EnumHitTypeWordIndex {
 					bstr = string(f.b)
 
-					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(i-len(f.b)+1))
+					hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)))
 				} else if hitType == EnumHitTypeIndexWord {
 
 					hitsIndexWord[int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b))] = string(f.b)
@@ -352,7 +352,7 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 					} else if hitType == EnumHitTypeWordIndex {
 						bstr = string(f.b)
 
-						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(i-len(f.b)+1))
+						hitsWordIndex[bstr] = append(hitsWordIndex[bstr], int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b)))
 					} else if hitType == EnumHitTypeIndexWord {
 
 						hitsIndexWord[int64(utf8.RuneCount(in[:i+1])-utf8.RuneCount(f.b))] = string(f.b)
