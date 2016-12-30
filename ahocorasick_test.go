@@ -5,6 +5,7 @@
 package ahocorasick
 
 import (
+	"log"
 	"regexp"
 	"strings"
 	"testing"
@@ -160,8 +161,8 @@ func TestMatch(t *testing.T) {
 func TestMatcher_Replace(t *testing.T) {
 	m := NewStringMatcher([]string{"Mozilla", "Mac", "中文", "Macintosh", "Safari", "Sausage"})
 	replacer := "*"
-	src := "Mozilla/5.0中文 (Macintosh; Intel Mac OS Mac 中文中文中文中文 中X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
-
+	src := "今天去面试了。Mozilla 面试官递给的了我一个笔记本电脑。 “来，试着把这个卖给我” 于是我就把本本夹在腋下，走出大厦，骑着我的电动车回家去了。 最后，他还是给我来电话了。 “马上把电脑送回来！”  “给我2000块，它就是你的了”。(来自微博 via.大头BOY )  作者：小甜姜 链接：https://www.zhihu.com/question/49658352/answer/120439291 来源：知乎 著作权归作者所有，转载请联系作者获得授权今天去面试了。面试官递给的了我一个笔记本电脑。 “来，试着把这个卖给我” 于是我就把本本夹在腋下，走出大厦，骑着我的电动车回家去了。 最后，他还是给我来电话了。 “马上把电脑送回来！”  “给我2000块，它就是你的了”。(来自微博 via.大头BOY )  作者：小甜姜 链接：https://www.zhihu.com/question/49658352/answer/120439291 来源：知乎 著作权归作者所有，转载请联系作者获得授权"
+	//src := "abcMozilla"
 	var err error
 	_, _, err = m.Replace(src, replacer, false, EnumHitTypeNone)
 
@@ -175,7 +176,8 @@ func TestMatcher_Replace(t *testing.T) {
 	assert(t, strings.Compare(content, src) == 0)
 
 	content, _, err = m.Replace(src, replacer, true, EnumHitTypeWord)
-
+	log.Println(src)
+	log.Println(content)
 	assert(t, err == nil)
 
 	assert(t, strings.Compare(content, src) != 0)

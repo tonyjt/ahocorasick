@@ -266,6 +266,7 @@ func (m *Matcher) Match(in []byte) []int {
 func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitType int) (string, interface{}, error) {
 
 	in := []byte(inStr)
+
 	replacer := []byte(replacerStr)
 	var out []byte
 
@@ -387,7 +388,7 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 		for _, index := range keys {
 			word := hits[index]
 			if index > lastIndex {
-				out = append(out, in[lastIndex+1:index]...)
+				out = append(out, in[lastIndex:index]...)
 			}
 
 			lenWord := utf8.RuneCount(word)
@@ -396,14 +397,14 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 				out = append(out, replacer...)
 			}
 
-			lastIndex = index + len(word) - 1
+			lastIndex = index + len(word)
 
 		}
 		if lastIndex < len(in)-1 {
-			out = append(out, in[lastIndex+1:]...)
+			out = append(out, in[lastIndex:]...)
 		}
 	} else {
-		out = in
+		out = []byte{}
 	}
 	//copy(out, in)
 
