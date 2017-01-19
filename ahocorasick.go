@@ -398,9 +398,8 @@ func (m *Matcher) Replace(inStr string, replacerStr string, isReplace bool, hitT
 			}
 
 			lastIndex = index + len(word)
-
 		}
-		if lastIndex < len(in)-1 {
+		if lastIndex < len(in) {
 			out = append(out, in[lastIndex:]...)
 		}
 	} else {
